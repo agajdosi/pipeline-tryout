@@ -1,0 +1,71 @@
+def iso_build = 'null'
+
+pipeline {
+    agent none
+
+    options {
+        timestamps()
+    }
+
+    stages {
+        stage('BUILD ISO') {
+            steps {
+                script {
+                    iso_build = build(job: "test-setenv")
+                }
+            }
+        }
+        stage('BUILD CDK') {
+            steps {
+                build job: "test-getenv", parameters: [
+                        string(name: 'ISO_URL', value: iso_build.buildVariables.iso_url)
+                    ]
+            }
+        }
+        stage('upload artifacts') {
+            steps {
+                echo "TODO: job which uploads binaries to temporary location on artifact server"
+            }
+        }
+        
+        stage('INTEGRATION TEST') {
+            parallel {
+                stage('CCI-rhel7-1') {
+                    steps {
+                        node('rhel7') {
+                            deleteDir()
+                            withCredentials([
+                                usernamePassword(credentialsId: 'agajdosi-rhd-login', usernameVariable: 'MINISHIFT_USERNAME', passwordVariable: 'MINISHIFT_PASSWORD'),
+                                usernamePassword(credentialsId: '5fc8e763-ddc7-4d66-a59f-f60819d99e9b', usernameVariable: 'GITLAB_USERNAME', passwordVariable: 'GITLAB_PASSWORD')
+                                ]) {
+                                    sh '''
+                                    whoami
+                                    '''
+                                }
+                        }
+                    }
+                }
+                stage('CCI-rhel7-2') {
+                    steps {
+                        echo "2nd quarter of full stack integration tests"
+                    }
+                }
+                stage('CCI-rhel7-3') {
+                    steps {
+                        echo "3rd quarter of full stack integration tests"
+                    }
+                }
+                stage('CCI-rhel7-4') {
+                    steps {
+                        echo "4th quarter of full stack integration tests"
+                    }
+                }
+            }
+        }
+        stage('PUBLISH artifacts') {
+            steps {
+                echo "TODO: job which moves the binaries from temporary location to the published nightly/weekly location"
+            }
+        }
+    }
+}
