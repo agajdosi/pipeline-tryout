@@ -10,7 +10,10 @@ pipeline {
     stages {
         stage('BUILD ISO') {
             steps {
-                sh "ls -a"
+                node any {
+                    sh "ls -a"
+                }
+
             }
         }
         stage('BUILD CDK') {
